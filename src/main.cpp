@@ -1,11 +1,12 @@
-#include <concepts>
 #include <filesystem>
 #include <format>
 #include <iostream>
 #include <regex>
 #include <string>
-#include <unordered_map>
 #include <vector>
+
+// use C libraries for environment variables and execution
+#include <cstdlib>
 
 namespace fs = std::filesystem;
 
@@ -64,9 +65,41 @@ std::string get_name(std::string_view prompt, std::regex name_constraint) {
   } while (true);
 }
 
+std::string get_name(std::string_view prompt) {
+  std::string in;
+  std::cout << prompt;
+  std::getline(std::cin, in);
+
+  return in;
+}
+
 int main() {
-  const fs::path PROJECTS_DIR{"/home/carters/Code/cpp/"};
-  const fs::path TEMPLATES_DIR{"/home/carters/Code/cpp/cpp-templs/"};
+
+  fs::path PROJECTS_DIR{};
+  fs::path TEMPLATES_DIR{};
+
+  if (const char *proj_dir_env = std::getenv("PROJECTS_DIR")) {
+    PROJECTS_DIR = proj_dir_env;
+  } else {
+    std::cerr << "Please specify your project directory as the PROJECTS_DIR "
+                 "environment variable\n";
+    return 1;
+  }
+  if (const char *templs_dir_env = std::getenv("TEMPLATES_DIR")) {
+    TEMPLATES_DIR = templs_dir_env;
+  } else {
+    std::cerr << "Please specify your template directory as the TEMPLATES_DIR "
+                 "environment variable\n";
+    return 1;
+  }
+  const fs::path curr{fs::current_path()};
+  if (curr != PROJECTS_DIR) {
+    PROJECTS_DIR = curr;
+    PROJECTS_DIR += '/';
+  }
+
+  std::cout << "Project directory: " << PROJECTS_DIR << '\n';
+  std::cout << "Templates directory: " << TEMPLATES_DIR << '\n';
 
   std::vector<fs::path> templs{}; // default list initialized
   if (fs::exists(TEMPLATES_DIR) && fs::is_directory(TEMPLATES_DIR)) {
@@ -86,14 +119,32 @@ int main() {
   // choose template
   int opt = get_option("option: ", templs.size());
 
+  fs::path templ_name{templs[opt - 1]};
   fs::path chosen_templ{TEMPLATES_DIR};
-  chosen_templ += templs[opt - 1];
+  chosen_templ += templ_name;
 
-  fs::path name = get_name("name: ", std::regex{R"(w*)"});
+  fs::path name = get_name("name: ");
   fs::path project_dir{PROJECTS_DIR};
   project_dir += name;
 
-  fs::copy(chosen_templ, project_dir); // TODO: implement recursive copy
+  // recursive copy
+  fs::copy(chosen_templ, project_dir, fs::copy_options::recursive);
+  // for (const auto &dir : fs::recursive_directory_iterator{chosen_templ}) {
+  //   fs::path mirrored_dir{project_dir};
+  //   bool sub_dir{false};
+  //   for (const auto &ele : dir.path()) {
+  //     if (sub_dir) {
+  //
+  //       mirrored_dir += '/';
+  //       mirrored_dir += ele;
+  //     }
+  //     if (ele == templ_name) {
+  //       sub_dir = true;
+  //     }
+  //   }
+  //
+  //   fs::copy(dir, mirrored_dir);
+  // }
 
   return 0;
 }
