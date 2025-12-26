@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Catch2 3 REQUIRED) # unit testing library
 
-add_executable(app src/main.cpp)
+add_executable(app src/main.cpp src/prompt.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address --pedantic")

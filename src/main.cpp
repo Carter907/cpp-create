@@ -1,77 +1,17 @@
 #include <filesystem>
 #include <format>
 #include <iostream>
-#include <regex>
 #include <string>
 #include <vector>
 
 // use C libraries for environment variables and execution
 #include <cstdlib>
 
+#include "prompt.h"
+
 namespace fs = std::filesystem;
 
 // static on global variables makes their linkage internal
-
-std::pair<int, bool> parse_int(std::string_view sv) {
-  std::stringstream ss;
-  int out;
-
-  if (!(ss << sv) || !(ss >> out)) {
-    return {out, false};
-  }
-
-  return {out, true};
-}
-size_t get_option(std::string_view prompt, size_t max_opts) {
-
-  std::string in;
-  do {
-
-    std::cout << prompt;
-    std::getline(std::cin, in);
-
-    auto [o, status] = parse_int(in);
-    size_t opt = static_cast<size_t>(o);
-
-    if (!status) {
-      std::cout << "Failed to parse your input. Try again.\n";
-      continue;
-    }
-
-    if (opt > max_opts || opt < 1) {
-      std::cout << "Your choice is impossible. Try again.\n";
-      continue;
-    }
-
-    return opt;
-
-  } while (true);
-}
-std::string get_name(std::string_view prompt, std::regex name_constraint) {
-
-  std::string in;
-  do {
-
-    std::cout << prompt;
-    std::getline(std::cin, in);
-
-    if (std::regex_match(in.begin(), in.end(), name_constraint)) {
-      std::cout << "That's not a directory name.\n";
-      continue;
-    }
-
-    return in;
-
-  } while (true);
-}
-
-std::string get_name(std::string_view prompt) {
-  std::string in;
-  std::cout << prompt;
-  std::getline(std::cin, in);
-
-  return in;
-}
 
 int main() {
 
@@ -117,13 +57,13 @@ int main() {
     std::cout << std::format("{}-> {}\n", i + 1, templs[i].string());
   }
   // choose template
-  int opt = get_option("option: ", templs.size());
+  int opt = prompt::get_option("option: ", templs.size());
 
   fs::path templ_name{templs[opt - 1]};
   fs::path chosen_templ{TEMPLATES_DIR};
   chosen_templ += templ_name;
 
-  fs::path name = get_name("name: ");
+  fs::path name = prompt::get_name("name: ");
   fs::path project_dir{PROJECTS_DIR};
   project_dir += name;
 
